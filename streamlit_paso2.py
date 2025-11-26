@@ -87,7 +87,14 @@ st.sidebar.markdown("## ⚙️ Configuración")
 
 modelo = st.sidebar.selectbox(
     "Selecciona modelo",
-    ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-pro"]
+    [
+        "gemini-2.0-flash",
+        "gemini-2.0-flash-lite",
+        "gemini-2.5-flash", 
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-pro"
+        
+        ]
 )
 
 # --- EXPANDER (el “slider dentro de slider” que querías) ---
@@ -108,7 +115,9 @@ if "max_tokens" not in locals():
 # Crear modelo
 chat_model = ChatGoogleGenerativeAI(
     model=modelo,
-    temperature=temperatura
+    temperature=temperatura,
+    top_p=top_p,
+    max_output_tokens=max_tokens
 )
 
 # Mostrar historial
