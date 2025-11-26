@@ -1,0 +1,38 @@
+# ---- Archivos sensibles ----
+.env
+*.env
+.env.*
+
+# ---- Cache de Python ----
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# ---- Entornos virtuales ----
+.venv/
+venv/
+env/
+
+# ---- Archivos de Streamlit ----
+.streamlit/
+
+# ---- Configuraciones locales ----
+*.log
+*.sqlite3
+
+# ---- Archivos del sistema ----
+.DS_Store
+Thumbs.db
+
+# ---- Dependencias descargadas ----
+dist/
+build/
+
+# ---- Configuración de editor ----
+.vscode/
+.idea/
+
+# ---- Carpetas temporales ----
+tmp/
+temp/

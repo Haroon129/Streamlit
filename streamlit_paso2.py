@@ -1,4 +1,5 @@
 import streamlit as st
+import random
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import AIMessage, HumanMessage
 from dotenv import load_dotenv
@@ -6,15 +7,28 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Configuración de página
-st.set_page_config(page_title="Chatbot Básico", page_icon="🤖")
-st.title("🤖 Chatbot - Multi Chat con LangChain + Google")
-st.markdown("Este es un *chatbot de ejemplo* con gestión de múltiples chats.")
+import streamlit as st
 
-# ----- Sidebar: Controles generales -----
-temperatura = st.sidebar.slider("Temperatura", 0.0, 1.0, 0.7, 0.05)
-modelo = st.sidebar.selectbox("Selecciona modelo", ["gemini-2.5-flash", "gemini-3.0", "gemini-2.0"])
+st.set_page_config(
+    page_title="AutistBot",
+    page_icon="🤖",
+    layout="centered"  # opcional: "wide"
+)
 
-# Inicializar chats si no existen
+mensajes = [
+    "¡Hola! 👋",
+    "Mondongo",
+    "Unos Loletes?",
+    "Que la fuerza te acompañe ✨",
+    "Cuando empecemos la invasión global te tendré en cuenta 😉",
+    "Mañana no vengas a clase 😈"
+]
+st.title("🤖 AutistBot - Tu amigo de confianza")
+st.markdown(random.choice(mensajes))
+
+
+
+# Inicializar chats
 if "chats" not in st.session_state:
     st.session_state.chats = {"Chat 1": []}
 if "chat_actual" not in st.session_state:
@@ -22,76 +36,95 @@ if "chat_actual" not in st.session_state:
 
 # Selector de chat
 st.sidebar.markdown("### 💬 Chats")
-chat_actual = st.sidebar.selectbox("Selecciona chat", list(st.session_state.chats.keys()), index=list(st.session_state.chats.keys()).index(st.session_state.chat_actual))
+chat_actual = st.sidebar.selectbox(
+    "Selecciona chat",
+    list(st.session_state.chats.keys()),
+    index=list(st.session_state.chats.keys()).index(st.session_state.chat_actual)
+)
 st.session_state.chat_actual = chat_actual
 
-# Botón para crear nuevo chat
+# Nuevo chat
 if st.sidebar.button("➕ Nuevo chat"):
-    nuevo_nombre = f"Chat {len(st.session_state.chats)+1}"
+    nuevo_nombre = f"Chat {len(st.session_state.chats) + 1}"
     st.session_state.chats[nuevo_nombre] = []
     st.session_state.chat_actual = nuevo_nombre
     st.rerun()
 
-# ----- Slider de acciones sobre el chat -----
-st.sidebar.markdown("### ⚙️ Opciones del chat")
-opcion_chat = st.sidebar.selectbox(
-    "Acciones",
-    ["Ninguna", "📝 Renombrar", "🧹 Vaciar chat", "🗑️ Eliminar chat"]
+# Acciones sobre el chat
+with st.sidebar.expander("⚙️ Opciones del chat"):
+    opcion_chat = st.selectbox(
+        "Acciones",
+        ["Ninguna", "📝 Renombrar", "🧹 Vaciar chat", "🗑️ Eliminar chat"]
+    )
+
+    # Renombrar
+    if opcion_chat == "📝 Renombrar":
+        nuevo_nombre = st.text_input("Nuevo nombre:", st.session_state.chat_actual)
+        if st.button("Guardar nombre"):
+            if nuevo_nombre.strip() and nuevo_nombre not in st.session_state.chats:
+                st.session_state.chats[nuevo_nombre] = st.session_state.chats.pop(st.session_state.chat_actual)
+                st.session_state.chat_actual = nuevo_nombre
+                st.rerun()
+
+    # Vaciar
+    if opcion_chat == "🧹 Vaciar chat":
+        if st.button("Vaciar"):
+            st.session_state.chats[st.session_state.chat_actual] = []
+            st.rerun()
+
+    # Eliminar
+    if opcion_chat == "🗑️ Eliminar chat":
+        if st.button("Eliminar"):
+            if len(st.session_state.chats) > 1:
+                del st.session_state.chats[st.session_state.chat_actual]
+                st.session_state.chat_actual = list(st.session_state.chats.keys())[0]
+                st.rerun()
+
+# ----- Sidebar: Controles generales -----
+
+# Sección principal de controles
+st.sidebar.markdown("## ⚙️ Configuración")
+
+modelo = st.sidebar.selectbox(
+    "Selecciona modelo",
+    ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-pro"]
 )
 
-# --- Renombrar chat ---
-if opcion_chat == "📝 Renombrar":
-    nuevo_nombre = st.sidebar.text_input("Nuevo nombre:", st.session_state.chat_actual)
-    if st.sidebar.button("Guardar nombre"):
-        if nuevo_nombre.strip() == "":
-            st.sidebar.error("El nombre no puede estar vacío.")
-        elif nuevo_nombre in st.session_state.chats:
-            st.sidebar.error("Ya existe un chat con ese nombre.")
-        else:
-            st.session_state.chats[nuevo_nombre] = st.session_state.chats.pop(st.session_state.chat_actual)
-            st.session_state.chat_actual = nuevo_nombre
-            st.sidebar.success("Nombre cambiado correctamente.")
-            st.rerun()
+# --- EXPANDER (el “slider dentro de slider” que querías) ---
+with st.sidebar.expander("🔧 Ajustes avanzados"):
+    temperatura = st.slider("Temperatura", 0.0, 1.0, 0.7, 0.05)
+    top_p = st.slider("Creatividad", 0.0, 1.0, 0.9, 0.05)
+    max_tokens = st.slider("Carácteres máximos", 50, 500, 200)
 
-# --- Vaciar chat ---
-elif opcion_chat == "🧹 Vaciar chat":
-    if st.sidebar.button("Vaciar"):
-        st.session_state.chats[st.session_state.chat_actual] = []
-        st.sidebar.success("Chat vaciado.")
-        st.rerun()
+# Si no abres el expander, usa valores por defecto
+if "temperatura" not in locals():
+    temperatura = 0.7
+if "top_p" not in locals():
+    top_p = 0.9
+if "max_tokens" not in locals():
+    max_tokens = 200
 
-# --- Eliminar chat ---
-elif opcion_chat == "🗑️ Eliminar chat":
-    if st.sidebar.button("Eliminar"):
-        if len(st.session_state.chats) == 1:
-            st.sidebar.warning("No puedes eliminar el único chat.")
-        else:
-            del st.session_state.chats[st.session_state.chat_actual]
-            st.session_state.chat_actual = list(st.session_state.chats.keys())[0]
-            st.sidebar.success("Chat eliminado.")
-            st.rerun()
 
-# ----- Crear modelo -----
-chat_model = ChatGoogleGenerativeAI(model=modelo, temperature=temperatura)
+# Crear modelo
+chat_model = ChatGoogleGenerativeAI(
+    model=modelo,
+    temperature=temperatura
+)
 
-# ----- Mostrar historial -----
+# Mostrar historial
 for msg in st.session_state.chats[st.session_state.chat_actual]:
     role = "assistant" if isinstance(msg, AIMessage) else "user"
     with st.chat_message(role):
         st.markdown(msg.content)
 
-# ----- Input de usuario -----
+# Input de usuario
 pregunta = st.chat_input("Escribe tu mensaje:")
 if pregunta:
-    # Mostrar y almacenar mensaje del usuario
     with st.chat_message("user"):
         st.markdown(pregunta)
     st.session_state.chats[st.session_state.chat_actual].append(HumanMessage(content=pregunta))
 
-    # Generar respuesta
     respuesta = chat_model.invoke(st.session_state.chats[st.session_state.chat_actual])
-
-    # Mostrar respuesta
     with st.chat_message("assistant"):
         st.markdown(respuesta.content)
 
